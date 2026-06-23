@@ -1,5 +1,6 @@
 #### What this tests ####
 #    This tests if prompts are being correctly formatted
+import base64
 import os
 import sys
 
@@ -38,9 +39,7 @@ def test_llama_3_prompt():
         {"role": "system", "content": "You are a good bot"},
         {"role": "user", "content": "Hey, how's it going?"},
     ]
-    received_prompt = prompt_factory(
-        model="meta-llama/Meta-Llama-3-8B-Instruct", messages=messages
-    )
+    received_prompt = prompt_factory(model="meta-llama/Meta-Llama-3-8B-Instruct", messages=messages)
     print(f"received_prompt: {received_prompt}")
 
     expected_prompt = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are a good bot<|eot_id|><|start_header_id|>user<|end_header_id|>\n\nHey, how's it going?<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"""
@@ -69,7 +68,9 @@ def test_claude_2_1_pt_formatting():
         {"role": "user", "content": 'Please return "Hello World" as a JSON object.'},
         {"role": "assistant", "content": "{"},
     ]
-    expected_prompt = 'You are a helpful assistant.\n\nHuman: Please return "Hello World" as a JSON object.\n\nAssistant: {'
+    expected_prompt = (
+        'You are a helpful assistant.\n\nHuman: Please return "Hello World" as a JSON object.\n\nAssistant: {'
+    )
     assert claude_2_1_pt(messages) == expected_prompt
 
     # Test case: System, Assistant sequence, should insert blank Human message
@@ -78,9 +79,7 @@ def test_claude_2_1_pt_formatting():
         {"role": "system", "content": "You are a storyteller."},
         {"role": "assistant", "content": "Once upon a time, there "},
     ]
-    expected_prompt = (
-        "You are a storyteller.\n\nHuman: \n\nAssistant: Once upon a time, there "
-    )
+    expected_prompt = "You are a storyteller.\n\nHuman: \n\nAssistant: Once upon a time, there "
     assert claude_2_1_pt(messages) == expected_prompt
 
     # Test case: System, User sequence
@@ -148,9 +147,7 @@ def test_anthropic_messages_nested_pt():
         },
     ]
 
-    new_messages = anthropic_messages_pt(
-        messages, model="claude-3-sonnet-20240229", llm_provider="anthropic"
-    )
+    new_messages = anthropic_messages_pt(messages, model="claude-3-sonnet-20240229", llm_provider="anthropic")
 
     assert isinstance(new_messages[1]["content"][0]["text"], str)
 
@@ -206,9 +203,7 @@ def test_base64_image_input(url, expected_media_type):
 
 def test_create_anthropic_image_param_with_http_url():
     """Test that HTTP/HTTPS URLs are passed as URL references, not base64."""
-    image_param = create_anthropic_image_param(
-        "https://example.com/image.jpg", format=None
-    )
+    image_param = create_anthropic_image_param("https://example.com/image.jpg", format=None)
 
     assert image_param["type"] == "image"
     assert image_param["source"]["type"] == "url"
@@ -217,9 +212,7 @@ def test_create_anthropic_image_param_with_http_url():
 
 def test_create_anthropic_image_param_with_https_url():
     """Test that HTTPS URLs are passed as URL references."""
-    image_param = create_anthropic_image_param(
-        "https://example.com/image.png", format=None
-    )
+    image_param = create_anthropic_image_param("https://example.com/image.png", format=None)
 
     assert image_param["type"] == "image"
     assert image_param["source"]["type"] == "url"
@@ -239,9 +232,7 @@ def test_create_anthropic_image_param_with_dict_input():
 
 def test_create_anthropic_image_param_with_base64_data_uri():
     """Test that data URIs are converted to base64."""
-    image_param = create_anthropic_image_param(
-        "data:image/jpeg;base64,/9j/4AAQSkZJRg==", format=None
-    )
+    image_param = create_anthropic_image_param("data:image/jpeg;base64,/9j/4AAQSkZJRg==", format=None)
 
     assert image_param["type"] == "image"
     assert image_param["source"]["type"] == "base64"
@@ -251,9 +242,7 @@ def test_create_anthropic_image_param_with_base64_data_uri():
 
 def test_create_anthropic_image_param_with_format_override():
     """Test that format parameter can override media type."""
-    image_param = create_anthropic_image_param(
-        "data:image/jpeg;base64,1234", format="image/png"
-    )
+    image_param = create_anthropic_image_param("data:image/jpeg;base64,1234", format="image/png")
 
     assert image_param["type"] == "image"
     assert image_param["source"]["type"] == "base64"
@@ -275,9 +264,7 @@ def test_anthropic_messages_pt_with_url_image():
         }
     ]
 
-    result = anthropic_messages_pt(
-        messages=messages, model="claude-3-5-sonnet", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages=messages, model="claude-3-5-sonnet", llm_provider="anthropic")
 
     assert len(result) == 1
     assert result[0]["role"] == "user"
@@ -308,9 +295,7 @@ def test_anthropic_messages_pt_with_base64_image():
         }
     ]
 
-    result = anthropic_messages_pt(
-        messages=messages, model="claude-3-5-sonnet", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages=messages, model="claude-3-5-sonnet", llm_provider="anthropic")
 
     assert len(result) == 1
     assert result[0]["role"] == "user"
@@ -352,16 +337,11 @@ def test_anthropic_messages_tool_call():
         },
     ]
 
-    translated_messages = anthropic_messages_pt(
-        messages, model="claude-3-sonnet-20240229", llm_provider="anthropic"
-    )
+    translated_messages = anthropic_messages_pt(messages, model="claude-3-sonnet-20240229", llm_provider="anthropic")
 
     print(translated_messages)
 
-    assert (
-        translated_messages[-1]["content"][0]["tool_use_id"]
-        == "bc8cb4b6-88c4-4138-8993-3a9d9cd51656"
-    )
+    assert translated_messages[-1]["content"][0]["tool_use_id"] == "bc8cb4b6-88c4-4138-8993-3a9d9cd51656"
 
 
 def test_anthropic_cache_controls_pt():
@@ -400,9 +380,7 @@ def test_anthropic_cache_controls_pt():
         },
     ]
 
-    translated_messages = anthropic_messages_pt(
-        messages, model="claude-3-5-sonnet-20240620", llm_provider="anthropic"
-    )
+    translated_messages = anthropic_messages_pt(messages, model="claude-3-5-sonnet-20240620", llm_provider="anthropic")
 
     for i, msg in enumerate(translated_messages):
         if i == 0:
@@ -451,9 +429,7 @@ def test_anthropic_cache_controls_tool_calls_pt():
         },
     ]
 
-    translated_messages = anthropic_messages_pt(
-        messages, model="claude-3-sonnet-20240229", llm_provider="anthropic"
-    )
+    translated_messages = anthropic_messages_pt(messages, model="claude-3-sonnet-20240229", llm_provider="anthropic")
 
     print("Translated tool call messages:", translated_messages)
 
@@ -542,10 +518,7 @@ def test_bedrock_parallel_tool_calling_pt(provider):
     number_of_messages = len(translated_messages)
 
     # assert last 2 messages are not the same role
-    assert (
-        translated_messages[number_of_messages - 1]["role"]
-        != translated_messages[number_of_messages - 2]["role"]
-    )
+    assert translated_messages[number_of_messages - 1]["role"] != translated_messages[number_of_messages - 2]["role"]
 
 
 def test_vertex_only_image_user_message():
@@ -563,9 +536,7 @@ def test_vertex_only_image_user_message():
         },
     ]
 
-    response = _gemini_convert_messages_with_history(
-        messages=messages, model="gemini-1.5-pro"
-    )
+    response = _gemini_convert_messages_with_history(messages=messages, model="gemini-1.5-pro")
 
     expected_response = [
         {
@@ -584,9 +555,7 @@ def test_vertex_only_image_user_message():
 
     assert len(response) == len(expected_response)
     for idx, content in enumerate(response):
-        assert (
-            content == expected_response[idx]
-        ), "Invalid gemini input. Got={}, Expected={}".format(
+        assert content == expected_response[idx], "Invalid gemini input. Got={}, Expected={}".format(
             content, expected_response[idx]
         )
 
@@ -606,7 +575,14 @@ def test_no_messages_yields_user_text():
 
 
 def test_convert_url():
-    convert_url_to_base64("https://picsum.photos/id/237/200/300")
+    png_bytes = bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f"
+        "15c4890000000a49444154789c6360000002000154a24f7c000000004945"
+        "4e44ae426082"
+    )
+    data_url = "data:image/png;base64," + base64.b64encode(png_bytes).decode("utf-8")
+
+    assert convert_url_to_base64(data_url) == data_url
 
 
 def test_azure_tool_call_invoke_helper():
@@ -760,9 +736,7 @@ def test_azure_tool_call_invoke_helper():
         ),
     ],
 )
-def test_ensure_alternating_roles(
-    messages, expected_messages, user_continue_message, assistant_continue_message
-):
+def test_ensure_alternating_roles(messages, expected_messages, user_continue_message, assistant_continue_message):
     messages = get_completion_messages(
         messages=messages,
         assistant_continue_message=assistant_continue_message,
@@ -1328,10 +1302,7 @@ def test_hf_chat_template():
     ]
     chat_template = hf_chat_template(model=model, messages=messages)
     print(chat_template)
-    assert (
-        chat_template.rstrip()
-        == "You are a helpful assistant. What is the weather in Copenhagen?"
-    )
+    assert chat_template.rstrip() == "You are a helpful assistant. What is the weather in Copenhagen?"
 
 
 def test_ollama_pt():
@@ -1477,9 +1448,7 @@ def test_convert_to_anthropic_tool_invoke_with_web_search_results():
         }
     ]
 
-    result = convert_to_anthropic_tool_invoke(
-        tool_calls, web_search_results=web_search_results
-    )
+    result = convert_to_anthropic_tool_invoke(tool_calls, web_search_results=web_search_results)
 
     assert len(result) == 2
     # First: server_tool_use
@@ -1520,9 +1489,7 @@ def test_convert_to_anthropic_tool_invoke_mixed_tools():
         }
     ]
 
-    result = convert_to_anthropic_tool_invoke(
-        tool_calls, web_search_results=web_search_results
-    )
+    result = convert_to_anthropic_tool_invoke(tool_calls, web_search_results=web_search_results)
 
     assert len(result) == 3
     # First: server_tool_use
@@ -1583,9 +1550,7 @@ def test_anthropic_messages_pt_with_server_tool_use():
         {"role": "tool", "tool_call_id": "toolu_01XYZ789", "content": "5100"},
     ]
 
-    result = anthropic_messages_pt(
-        messages, model="claude-sonnet-4-5", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages, model="claude-sonnet-4-5", llm_provider="anthropic")
 
     # Find the assistant message
     assistant_msg = next(m for m in result if m["role"] == "assistant")
@@ -1694,18 +1659,14 @@ def test_anthropic_messages_pt_raw_bash_tool_result_passthrough():
         {"role": "user", "content": "Thanks!"},
     ]
 
-    result = anthropic_messages_pt(
-        messages, model="claude-sonnet-4-5", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages, model="claude-sonnet-4-5", llm_provider="anthropic")
 
     assistant_msg = next(m for m in result if m["role"] == "assistant")
     content = assistant_msg["content"]
     types = [c.get("type") for c in content]
 
     assert "server_tool_use" in types, "server_tool_use block must be preserved"
-    assert (
-        "bash_code_execution_tool_result" in types
-    ), "bash_code_execution_tool_result block must not be dropped"
+    assert "bash_code_execution_tool_result" in types, "bash_code_execution_tool_result block must not be dropped"
     assert "text" in types
 
     # Result must immediately follow its server_tool_use
@@ -1713,9 +1674,7 @@ def test_anthropic_messages_pt_raw_bash_tool_result_passthrough():
     result_idx = types.index("bash_code_execution_tool_result")
     assert result_idx == srv_idx + 1
 
-    bash_result = next(
-        c for c in content if c.get("type") == "bash_code_execution_tool_result"
-    )
+    bash_result = next(c for c in content if c.get("type") == "bash_code_execution_tool_result")
     assert bash_result["tool_use_id"] == "srvtoolu_01BASH"
 
 
@@ -1761,18 +1720,16 @@ def test_anthropic_messages_pt_with_bash_tool_result_in_provider_specific_fields
         {"role": "user", "content": "Thanks!"},
     ]
 
-    result = anthropic_messages_pt(
-        messages, model="claude-sonnet-4-5", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages, model="claude-sonnet-4-5", llm_provider="anthropic")
 
     assistant_msg = next(m for m in result if m["role"] == "assistant")
     content = assistant_msg["content"]
     types = [c.get("type") for c in content]
 
     assert "server_tool_use" in types, "server_tool_use block must be reconstructed"
-    assert (
-        "bash_code_execution_tool_result" in types
-    ), "bash_code_execution_tool_result must be paired from provider_specific_fields['tool_results']"
+    assert "bash_code_execution_tool_result" in types, (
+        "bash_code_execution_tool_result must be paired from provider_specific_fields['tool_results']"
+    )
 
     # Result must immediately follow its server_tool_use
     srv_idx = types.index("server_tool_use")
@@ -1781,9 +1738,7 @@ def test_anthropic_messages_pt_with_bash_tool_result_in_provider_specific_fields
 
     srv = next(c for c in content if c.get("type") == "server_tool_use")
     assert srv["id"] == "srvtoolu_01BASH"
-    bash_result = next(
-        c for c in content if c.get("type") == "bash_code_execution_tool_result"
-    )
+    bash_result = next(c for c in content if c.get("type") == "bash_code_execution_tool_result")
     assert bash_result["tool_use_id"] == "srvtoolu_01BASH"
 
 
@@ -1867,9 +1822,7 @@ def test_attempt_json_repair_missing_closing_brace():
         _attempt_json_repair,
     )
 
-    truncated = (
-        '{"command": ["bash","-lc","find /x/repos -name \'messages.py\' -type f"]'
-    )
+    truncated = '{"command": ["bash","-lc","find /x/repos -name \'messages.py\' -type f"]'
     result = _attempt_json_repair(truncated)
     assert result is not None
     assert result["command"] == [
@@ -1983,9 +1936,7 @@ def test_parse_tool_call_arguments_repairs_truncated_json():
     )
 
     truncated = '{"command": ["bash","-lc","find /x -type f"]'
-    result = parse_tool_call_arguments(
-        truncated, tool_name="shell", context="Anthropic tool invoke"
-    )
+    result = parse_tool_call_arguments(truncated, tool_name="shell", context="Anthropic tool invoke")
     assert result == {"command": ["bash", "-lc", "find /x -type f"]}
 
 
@@ -2089,9 +2040,7 @@ def test_anthropic_messages_pt_interleave_thinking_with_server_tool_calls():
         {"role": "user", "content": "Now search for news about solveit"},
     ]
 
-    result = anthropic_messages_pt(
-        messages, model="claude-sonnet-4-5", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages, model="claude-sonnet-4-5", llm_provider="anthropic")
 
     # Find the assistant message
     assistant_msg = next(m for m in result if m["role"] == "assistant")
@@ -2172,9 +2121,7 @@ def test_anthropic_messages_pt_thinking_blocks_no_server_tools_unchanged():
         },
     ]
 
-    result = anthropic_messages_pt(
-        messages, model="claude-sonnet-4-5", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages, model="claude-sonnet-4-5", llm_provider="anthropic")
 
     assistant_msg = next(m for m in result if m["role"] == "assistant")
     content = assistant_msg["content"]
@@ -2244,9 +2191,7 @@ def test_anthropic_messages_pt_interleave_more_thinking_than_tool_groups():
         },
     ]
 
-    result = anthropic_messages_pt(
-        messages, model="claude-sonnet-4-5", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages, model="claude-sonnet-4-5", llm_provider="anthropic")
 
     assistant_msg = next(m for m in result if m["role"] == "assistant")
     content = assistant_msg["content"]
@@ -2332,9 +2277,7 @@ def test_anthropic_messages_pt_list_content_with_thinking_preserves_order():
         {"role": "user", "content": "Tell me more"},
     ]
 
-    result = anthropic_messages_pt(
-        messages, model="claude-sonnet-4-5", llm_provider="anthropic"
-    )
+    result = anthropic_messages_pt(messages, model="claude-sonnet-4-5", llm_provider="anthropic")
 
     assistant_msg = next(m for m in result if m["role"] == "assistant")
     content = assistant_msg["content"]
@@ -2353,9 +2296,7 @@ def test_anthropic_messages_pt_list_content_with_thinking_preserves_order():
 
     # Verify no duplicate thinking blocks
     thinking_count = sum(1 for t in types if t == "thinking")
-    assert (
-        thinking_count == 2
-    ), f"Expected 2 thinking blocks, got {thinking_count} (duplication detected)"
+    assert thinking_count == 2, f"Expected 2 thinking blocks, got {thinking_count} (duplication detected)"
 
     # Verify signatures preserved in correct positions
     assert content[0]["signature"] == "sig_1"
